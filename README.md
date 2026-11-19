@@ -1,27 +1,34 @@
 # Tasks
 
-A simple offline to-do app with project folders and a list of your GitHub repos.
-It saves everything to a `tasks.json` file on your computer (Edge / Chrome).
+An offline-first personal task manager, notes workspace, and GitHub repository tracker built as an installable Progressive Web App (PWA).
 
-## Run it
+## Features
 
-```
+- **Tasks & Today view:** Create, edit, complete, and schedule tasks with custom date and time pickers.
+- **Project folders:** Group related tasks into collapsible folders and link them to GitHub repositories.
+- **Completion analytics:** Track pending, daily, and weekly progress alongside a Weekly / Monthly completion bar chart.
+- **Notes:** Dedicated split-view notepad with search, pinning, folder tags, and instant auto-save.
+- **GitHub integration:** Browse public repositories by activity status (Active / Quiet) and view your official GitHub GraphQL contribution heatmap offline.
+- **Local disk storage:** Save data directly to a `tasks.json` file on disk via the File System Access API (Edge / Chrome), with an automatic IndexedDB fallback and JSON export/import.
+- **Themes:** Switch between Olive & Terracotta and Scuderia Ferrari palettes in Settings.
+
+## Tech Stack
+
+- React 18 + Vite
+- IndexedDB (`idb-keyval`) + File System Access API
+- GitHub REST & GraphQL APIs
+- `vite-plugin-pwa` (Workbox service worker & web app manifest)
+
+## Development
+
+```bash
 npm install
-npm run dev        # development, opens http://localhost:5173
+npm run dev
 ```
 
-## Install it as an app
+## Production Build
 
-```
+```bash
 npm run build
-npm run preview    # http://localhost:4173
+npm run preview
 ```
-
-Open http://localhost:4173 in Edge and click the **Install** icon in the address bar.
-After that the app opens in its own window and works offline, even when the preview server is not running.
-
-## Where data lives
-
-- **Main copy:** the `tasks.json` file you pick (Settings → Storage)
-- **Backup copy:** inside the browser, in case the file is unavailable
-- **Export / Import:** Settings → Backup
