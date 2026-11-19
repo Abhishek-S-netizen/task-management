@@ -191,9 +191,38 @@ function TaskItem({ task, project, showProject, onToggle, onEdit, onDelete }) {
 
 /* ---------------- The list ---------------- */
 
-export default function TaskList({ tasks, projects, update, notify, defaultProjectId, defaultDue, showProject = true, emptyText }) {
+export default function TaskList({
+  tasks,
+  projects,
+  update,
+  notify,
+  defaultProjectId,
+  defaultDue,
+  showProject = true,
+  groupByFolder = false,
+  emptyText,
+}) {
   const [editingId, setEditingId] = useState(null);
   const [showDone, setShowDone] = useState(false);
+  const [openGroups, setOpenGroups] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('open_folder_groups') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleGroup = (id) => {
+    setOpenGroups((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      try {
+        localStorage.setItem('open_folder_groups', JSON.stringify(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+  };
 
   const open = tasks.filter((t) => !t.done).sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
   const done = tasks.filter((t) => t.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
@@ -245,7 +274,7 @@ export default function TaskList({ tasks, projects, update, notify, defaultProje
     );
   };
 
-  const renderItem = (task) =>
+  const renderItem = (task, showFolderLabel = showProject) =>
     editingId === task.id ? (
       <li key={task.id} className="task editing">
         <EditTask
@@ -261,34 +290,83 @@ export default function TaskList({ tasks, projects, update, notify, defaultProje
         key={task.id}
         task={task}
         project={projectById[task.projectId]}
-        showProject={showProject}
+        showProject={showFolderLabel}
         onToggle={() => toggle(task)}
         onEdit={() => setEditingId(task.id)}
         onDelete={() => remove(task)}
       />
     );
 
+  // When groupByFolder is active, split open tasks into unfoldered + collapsible folder sections
+  const looseOpen = groupByFolder ? open.filter((t) => !t.projectId || !projectById[t.projectId]) : open;
+  const folderGroups = groupByFolder
+    ? projects
+      .map((p) => ({
+        project: p,
+        items: open.filter((t) => t.projectId === p.id),
+      }))
+      .filter((g) => g.items.length > 0)
+    : [];
+
   return (
     <div className="task-list">
-      <AddTask projects={projects} defaultProjectId={defaultProjectId} defaultDue={defaultDue} onAdd={add} />
+      <div className="task-list-top">
+        <AddTask projects={projects} defaultProjectId={defaultProjectId} defaultDue={defaultDue} onAdd={add} />
+      </div>
 
-      {open.length === 0 ? <p className="empty">{emptyText || 'Nothing to do. Nice.'}</p> : <ul>{open.map(renderItem)}</ul>}
+      <div className="task-list-scroll">
+        {open.length === 0 ? (
+          <p className="empty">{emptyText || 'Nothing to do. Nice.'}</p>
+        ) : groupByFolder ? (
+          <>
+            {looseOpen.length > 0 && <ul>{looseOpen.map((t) => renderItem(t, false))}</ul>}
 
-      {done.length > 0 && (
-        <div className="done-section">
-          <div className="done-header">
-            <button className="link-btn" onClick={() => setShowDone(!showDone)}>
-              {showDone ? '▾' : '▸'} Completed ({done.length})
-            </button>
-            {showDone && (
-              <button className="link-btn muted" onClick={clearDone}>
-                Clear completed
+            {folderGroups.map(({ project, items }) => {
+              const expanded = Boolean(openGroups[project.id]);
+              return (
+                <div key={project.id} className="folder-group">
+                  <button
+                    type="button"
+                    className={`folder-group-header ${expanded ? 'expanded' : ''}`}
+                    onClick={() => toggleGroup(project.id)}
+                    aria-expanded={expanded}
+                  >
+                    <span className="folder-group-caret">{expanded ? '▾' : '▸'}</span>
+                    <FolderIcon />
+                    <span className="folder-group-name">{project.name}</span>
+                    <span className="folder-group-count">
+                      {items.length} {items.length === 1 ? 'task' : 'tasks'}
+                    </span>
+                  </button>
+                  {expanded && (
+                    <ul className="folder-group-list">
+                      {items.map((t) => renderItem(t, false))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        ) : (
+          <ul>{open.map((t) => renderItem(t, showProject))}</ul>
+        )}
+
+        {done.length > 0 && (
+          <div className="done-section">
+            <div className="done-header">
+              <button className="link-btn" onClick={() => setShowDone(!showDone)}>
+                {showDone ? '▾' : '▸'} Completed ({done.length})
               </button>
-            )}
+              {showDone && (
+                <button className="link-btn muted" onClick={clearDone}>
+                  Clear completed
+                </button>
+              )}
+            </div>
+            {showDone && <ul>{done.map((t) => renderItem(t, showProject))}</ul>}
           </div>
-          {showDone && <ul>{done.map(renderItem)}</ul>}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

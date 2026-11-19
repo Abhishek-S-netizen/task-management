@@ -336,79 +336,81 @@ function ProjectView({ project, data, update, notify, openModal, onBack }) {
   ];
 
   return (
-    <div className="view">
-      <div className="back-row">
-        <button type="button" className="link-btn muted" onClick={onBack}>
-          ← All folders
-        </button>
-      </div>
+    <div className="view task-page-view">
+      <div className="task-page-head">
+        <div className="back-row">
+          <button type="button" className="link-btn muted" onClick={onBack}>
+            ← All folders
+          </button>
+        </div>
 
-      <header className="project-header">
-        <div className="project-title-row">
-          <div className="grow">
-            {renaming ? (
-              <form onSubmit={rename}>
-                <input
-                  className="title-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onBlur={rename}
-                  autoFocus
-                  aria-label="Folder name"
+        <header className="project-header">
+          <div className="project-title-row">
+            <div className="grow">
+              {renaming ? (
+                <form onSubmit={rename}>
+                  <input
+                    className="title-input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={rename}
+                    autoFocus
+                    aria-label="Folder name"
+                  />
+                </form>
+              ) : (
+                <h1 onDoubleClick={() => setRenaming(true)} title="Double-click to rename">
+                  {project.name}
+                </h1>
+              )}
+            </div>
+            <div className="row-gap">
+              <button className="btn small-btn" onClick={() => setRenaming(true)}>
+                Rename
+              </button>
+              <button className="btn small-btn danger-text" onClick={remove}>
+                Delete
+              </button>
+            </div>
+          </div>
+
+          <div className="project-meta-row">
+            <span>{tasks.length === 0 ? 'No tasks yet' : `${doneCount} of ${tasks.length} done`}</span>
+
+            {data.github.repos.length > 0 && (
+              <>
+                <span className="meta-sep">·</span>
+                <Select
+                  value={project.repo || ''}
+                  onChange={(val) => setProject({ repo: val || null })}
+                  options={repoOptions}
+                  placeholder="Link GitHub repo"
+                  ariaLabel="Linked GitHub repo"
                 />
-              </form>
-            ) : (
-              <h1 onDoubleClick={() => setRenaming(true)} title="Double-click to rename">
-                {project.name}
-              </h1>
+              </>
+            )}
+
+            {repo && (
+              <>
+                <span className="meta-sep">·</span>
+                <RepoStatus repo={repo} />
+                <span className="meta-sep">·</span>
+                <span>updated {timeAgo(repo.pushedAt)}</span>
+                <span className="meta-sep">·</span>
+                <a href={repo.url} target="_blank" rel="noreferrer">
+                  Open on GitHub ↗
+                </a>
+              </>
             )}
           </div>
-          <div className="row-gap">
-            <button className="btn small-btn" onClick={() => setRenaming(true)}>
-              Rename
-            </button>
-            <button className="btn small-btn danger-text" onClick={remove}>
-              Delete
-            </button>
-          </div>
-        </div>
 
-        <div className="project-meta-row">
-          <span>{tasks.length === 0 ? 'No tasks yet' : `${doneCount} of ${tasks.length} done`}</span>
-
-          {data.github.repos.length > 0 && (
-            <>
-              <span className="meta-sep">·</span>
-              <Select
-                value={project.repo || ''}
-                onChange={(val) => setProject({ repo: val || null })}
-                options={repoOptions}
-                placeholder="Link GitHub repo"
-                ariaLabel="Linked GitHub repo"
-              />
-            </>
+          {tasks.length > 0 && (
+            <div className="progress" aria-hidden>
+              <div style={{ width: `${(doneCount / tasks.length) * 100}%` }} />
+            </div>
           )}
-
-          {repo && (
-            <>
-              <span className="meta-sep">·</span>
-              <RepoStatus repo={repo} />
-              <span className="meta-sep">·</span>
-              <span>updated {timeAgo(repo.pushedAt)}</span>
-              <span className="meta-sep">·</span>
-              <a href={repo.url} target="_blank" rel="noreferrer">
-                Open on GitHub ↗
-              </a>
-            </>
-          )}
-        </div>
-
-        {tasks.length > 0 && (
-          <div className="progress" aria-hidden>
-            <div style={{ width: `${(doneCount / tasks.length) * 100}%` }} />
-          </div>
-        )}
-      </header>
+        </header>
+      </div>
       <TaskList
         key={project.id}
         tasks={tasks}
@@ -584,10 +586,10 @@ export default function App() {
   const q = noteSearch.trim().toLowerCase();
   const filteredNotes = q
     ? sortedNotes.filter(
-        (n) =>
-          (n.title || '').toLowerCase().includes(q) ||
-          (n.content || '').toLowerCase().includes(q),
-      )
+      (n) =>
+        (n.title || '').toLowerCase().includes(q) ||
+        (n.content || '').toLowerCase().includes(q),
+    )
     : sortedNotes;
   const activeNote =
     sortedNotes.find((n) => n.id === selectedNoteId) || sortedNotes[0] || null;
@@ -631,8 +633,8 @@ export default function App() {
   let content;
   if (view.type === 'today') {
     content = (
-      <div className="view">
-        <header className="view-header">
+      <div className="view task-page-view">
+        <header className="view-header task-page-head">
           <div>
             <h1>Today</h1>
             <p className="subtle">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
@@ -687,8 +689,8 @@ export default function App() {
     content = <SettingsView data={data} update={update} replaceAll={replaceAll} store={store} sync={sync} openModal={openModal} />;
   } else {
     content = (
-      <div className="view">
-        <header className="view-header">
+      <div className="view task-page-view">
+        <header className="view-header task-page-head">
           <div>
             <h1>All tasks</h1>
             <p className="subtle">
@@ -696,7 +698,14 @@ export default function App() {
             </p>
           </div>
         </header>
-        <TaskList key="all" tasks={data.tasks} projects={data.projects} update={update} notify={notify} />
+        <TaskList
+          key="all"
+          tasks={data.tasks}
+          projects={data.projects}
+          update={update}
+          notify={notify}
+          groupByFolder
+        />
       </div>
     );
   }
